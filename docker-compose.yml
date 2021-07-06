@@ -1,0 +1,158 @@
+version: '3.1'
+
+services:
+  mongodb-config-1:
+    image: 'mongo:4'
+    hostname: mongodb-config-1
+    container_name: mongodb-config-1
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+    expose:
+      - 27117
+    ports:
+      - "27117:27117"
+    restart: always
+    entrypoint: ["/usr/bin/mongod", "--configsvr", "--bind_ip_all", "--replSet", "mongodb-config", "--port", "27117"]
+    networks:
+      - mongodb-cluster
+
+
+  mongodb-config-2:
+    image: 'mongo:4'
+    hostname: mongodb-config-2
+    container_name: mongodb-config-2
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+    expose:
+      - 27117
+    ports:
+      - "27118:27117"
+    restart: always
+    entrypoint: ["/usr/bin/mongod", "--configsvr", "--bind_ip_all", "--replSet", "mongodb-config", "--port", "27117"]
+    networks:
+      - mongodb-cluster
+
+
+  mongodb-config-3:
+    image: 'mongo:4'
+    hostname: mongodb-config-3
+    container_name: mongodb-config-3
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+    expose:
+      - 27117
+    ports:
+      - "27119:27117"
+    restart: always
+    entrypoint: ["/usr/bin/mongod", "--configsvr", "--bind_ip_all", "--replSet", "mongodb-config", "--port", "27117"]
+    networks:
+      - mongodb-cluster
+  
+  mongodb-shard-1: 
+    image: 'mongo:4'
+    hostname: mongodb-shard-1
+    container_name: mongodb-shard-1
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+    expose:
+      - 27117
+    ports:
+      - "27217:27117"
+    restart: always
+    volumes:
+      - ./mongodb-shard-1/data:/data/db
+    entrypoint: ["/usr/bin/mongod", "--shardsvr", "--bind_ip_all", "--replSet", "mongodb-shard", "--port", "27117"]
+    networks:
+      - mongodb-cluster
+
+  mongodb-shard-2: 
+    image: 'mongo:4'
+    hostname: mongodb-shard-2
+    container_name: mongodb-shard-2
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+    expose:
+      - 27117
+    ports:
+      - "27218:27117"
+    restart: always
+    volumes:
+      - ./mongodb-shard-2/data:/data/db
+    entrypoint: ["/usr/bin/mongod", "--shardsvr", "--bind_ip_all", "--replSet", "mongodb-shard", "--port", "27117"]
+    networks:
+      - mongodb-cluster
+  
+  mongodb-shard-3: 
+    image: 'mongo:4'
+    hostname: mongodb-shard-3
+    container_name: mongodb-shard-3
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+    expose:
+      - 27117
+    ports:
+      - "27219:27117"
+    restart: always
+    volumes:
+      - ./mongodb-shard-3/data:/data/db
+    entrypoint: ["/usr/bin/mongod", "--shardsvr", "--bind_ip_all", "--replSet", "mongodb-shard", "--port", "27117"]
+    networks:
+      - mongodb-cluster
+
+  mongos-1:
+    image: 'mongo:4'
+    hostname: mongos-1
+    container_name: mongos-1
+    depends_on: 
+      - mongodb-config-1
+      - mongodb-config-2
+      - mongodb-config-3
+      - mongodb-shard-1
+      - mongodb-shard-2
+      - mongodb-shard-3
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+    expose:
+      - 27117
+    ports:
+      - "27317:27117"
+    restart: always
+    entrypoint: ["/usr/bin/mongos", "--configdb", "mongodb-config/mongodb-config-1:27117,mongodb-config-2:27117,mongodb-config-3:27117", "--bind_ip_all", "--port", "27117"]
+    networks:
+      - mongodb-cluster
+  
+  mongos-2:
+    image: 'mongo:4'
+    hostname: mongos-2
+    container_name: mongos-2
+    depends_on: 
+      - mongodb-config-1
+      - mongodb-config-2
+      - mongodb-config-3
+      - mongodb-shard-1
+      - mongodb-shard-2
+      - mongodb-shard-3
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+    expose:
+      - 27117
+    ports:
+      - "27318:27117"
+    restart: always
+    entrypoint: ["/usr/bin/mongos", "--configdb", "mongodb-config/mongodb-config-1:27117,mongodb-config-2:27117,mongodb-config-3:27117", "--bind_ip_all", "--port", "27117"]
+    networks:
+      - mongodb-cluster
+
+networks:
+  mongodb-cluster:
+    driver: bridge
+    name: mongodb-cluster
+
